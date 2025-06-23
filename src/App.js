@@ -729,7 +729,7 @@ const MovieTVRecommendationSystem = () => {
       <footer className="bg-gray-800 dark:bg-gray-950 text-white py-8 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <p className="text-gray-400 text-sm">
-            © {new Date().getFullYear()} Flembox. Todos os direitos reservados.
+            © {new Date().getFullYear()} FlemBox. Todos os direitos reservados.
           </p>
         </div>
         <p className="text-gray-500 dark:text-gray-600 text-sm mt-2 text-center w-full transition-colors duration-300">
