@@ -1003,8 +1003,7 @@ const MovieTVRecommendationSystem = () => {
         <p className="text-gray-600 text-sm mt-2 text-center w-full">
             Desenvolvido por <a href="https://instagram.com/devmxs" className="hover:text-blue-700 font-semibold transition">DEVMXS</a>
           </p>
-      </footer>
-      
+      </footer> 
     </div>
   );
 };
