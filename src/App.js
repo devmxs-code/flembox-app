@@ -384,67 +384,19 @@ const MovieTVRecommendationSystem = () => {
       : `/placeholder-${Math.floor(Math.random() * 5) + 1}.jpg`;
 
     return (
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
+      <div
         className={`bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 ${
           variant === 'featured' ? 'featured-card' : 'transform hover:-translate-y-1'
         }`}
       >
         <div className="relative">
-          <div className={`${variant === 'featured' ? 'h-80' : 'h-64'} bg-gradient-to-br from-purple-400 to-blue-500 relative overflow-hidden`}>
+          <div className={`${variant === 'featured' ? 'h-48 sm:h-64 md:h-80' : 'h-40 sm:h-56 md:h-64'} bg-gradient-to-br from-purple-400 to-blue-500`}>
             <img 
               src={imageUrl}
               alt={title}
-              className="w-full h-full object-cover transition-opacity duration-300 hover:opacity-90"
+              className="w-full h-full object-cover"
               loading="lazy"
-              onError={(e) => {
-                e.target.src = `/placeholder-${Math.floor(Math.random() * 5) + 1}.jpg`;
-              }}
             />
-            
-            <div className={`absolute top-3 left-3 px-2 py-1 rounded text-xs font-semibold text-white ${
-              item.type === 'movie' ? 'bg-blue-600' : 'bg-purple-600'
-            }`}>
-              {item.type === 'movie' ? 'FILME' : 'SÉRIE'}
-            </div>
-            
-            <button
-              onClick={() => toggleFavorite(item.id)}
-              className={`absolute top-3 right-3 p-2 rounded-full transition-colors ${
-                isFavorite
-                  ? 'bg-red-500 text-white'
-                  : 'bg-white/80 text-gray-600 hover:bg-red-500 hover:text-white'
-              }`}
-              aria-label={isFavorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
-            >
-              <Heart className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
-            </button>
-            
-            <div className="absolute bottom-3 left-3 bg-black/70 text-white px-2 py-1 rounded text-sm font-semibold">
-              ★ {item.vote_average?.toFixed(1) || 'N/A'}
-            </div>
-            
-            {variant === 'featured' && (
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex items-end p-4">
-                <div>
-                  <h3 className="font-bold text-xl text-white mb-1">{title}</h3>
-                  <div className="flex items-center gap-2 text-white/80 text-sm mb-2">
-                    <span>{new Date(releaseDate).getFullYear()}</span>
-                    <span>•</span>
-                    <span>{genreNames}</span>
-                  </div>
-                  <button
-                    onClick={() => setSelectedContent(item)}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                  >
-                    <Play className="w-4 h-4" />
-                    <span>Ver detalhes</span>
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
           
           {variant !== 'featured' && (
@@ -481,7 +433,7 @@ const MovieTVRecommendationSystem = () => {
             </div>
           )}
         </div>
-      </motion.div>
+      </div>
     );
   });
 
@@ -508,40 +460,23 @@ const MovieTVRecommendationSystem = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 overflow-y-auto"
+        className="fixed inset-0 bg-black/80 flex items-center justify-center p-2 sm:p-4 z-50 overflow-y-auto"
         onClick={onClose}
       >
         <div
           onClick={(e) => e.stopPropagation()}
-          className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto relative"
+          className="bg-white rounded-xl w-full max-w-xs sm:max-w-lg md:max-w-2xl lg:max-w-4xl max-h-[90vh] overflow-y-auto relative"
         >
-          <div className="relative h-96">
+          <div className="relative h-40 sm:h-56 md:h-72">
             <img 
               src={backdropUrl}
               alt={title}
               className="w-full h-full object-cover"
               loading="eager"
-              onError={(e) => {
-                e.target.src = `/placeholder-large-${Math.floor(Math.random() * 3) + 1}.jpg`;
-              }}
             />
-            
-            <button
-              onClick={onClose}
-              className="absolute top-4 right-4 bg-white/80 p-2 rounded-full hover:bg-white transition-colors"
-              aria-label="Fechar modal"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            
-            <div className={`absolute top-4 left-4 px-3 py-1 rounded text-sm font-semibold text-white ${
-              item.type === 'movie' ? 'bg-blue-600' : 'bg-purple-600'
-            }`}>
-              {item.type === 'movie' ? 'FILME' : 'SÉRIE'}
-            </div>
           </div>
           
-          <div className="p-6">
+          <div className="p-3 sm:p-6">
             <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-6">
               <div className="flex-1">
                 <h2 className="text-3xl font-bold mb-3">{title}</h2>
@@ -651,16 +586,15 @@ const MovieTVRecommendationSystem = () => {
       <header className={`fixed top-0 left-0 right-0 bg-white shadow-sm z-40 transition-all duration-300 ${
         isScrolled ? 'py-2 shadow-md' : 'py-4'
       }`}>
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
+            <div className="flex items-center gap-2 mb-2 sm:mb-0">
               <Popcorn className="w-8 h-8 text-blue-500" />
               <h1 className="text-xl font-bold text-gray-900 hidden sm:block">
                 Movie<span className="text-blue-500">Finder</span>
               </h1>
             </div>
-            
-            <div className="flex-1 max-w-xl mx-4">
+            <div className="flex-1 w-full max-w-xl mx-0 sm:mx-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
@@ -673,7 +607,6 @@ const MovieTVRecommendationSystem = () => {
                 />
               </div>
             </div>
-            
             <div className="flex items-center gap-2">
               <button
                 onClick={() => handleContentTypeChange('movie')}
@@ -768,7 +701,7 @@ const MovieTVRecommendationSystem = () => {
                     </div>
                     
                     {section.items.length > 0 ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 px-2 sm:px-4">
                         {section.items.map(item => (
                           <ContentCard key={item.id} item={item} />
                         ))}
@@ -794,7 +727,7 @@ const MovieTVRecommendationSystem = () => {
             
             {/* Conteúdo principal */}
             {getCurrentContent.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 px-2 sm:px-4">
                 <AnimatePresence>
                   {getCurrentContent.map(item => (
                     <ContentCard key={item.id} item={item} />
@@ -841,8 +774,8 @@ const MovieTVRecommendationSystem = () => {
 
       {/* Footer */}
       <footer className="bg-gray-800 text-white py-8">
-        <div className="max-w-7xl mx-auto px-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div>
               <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
                 <Popcorn className="w-6 h-6" />
