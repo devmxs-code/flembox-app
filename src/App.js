@@ -464,20 +464,26 @@ const MovieTVRecommendationSystem = () => {
             {item.poster_path ? (
               <img
                 src={
-                  item.poster_path
-                    ? item.poster_path.startsWith('/placeholder')
-                      ? item.poster_path
-                      : `${IMAGE_BASE_URL}${item.poster_path}`
-                    : '/placeholder1.jpg'
+                  item.poster_path.startsWith('/placeholder')
+                    ? item.poster_path
+                    : `${IMAGE_BASE_URL}${item.poster_path}`
                 }
                 alt={title}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 onError={(e) => {
                   e.target.style.display = 'none';
-                  e.target.nextSibling.style.display = 'flex';
+                  e.target.nextSibling && (e.target.nextSibling.style.display = 'flex');
                 }}
               />
-            ) : null}
+            ) : (
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-400 to-blue-500 flex items-center justify-center">
+                {item.type === 'movie' ? (
+                  <Film className="w-16 h-16 text-white opacity-70" />
+                ) : (
+                  <Tv className="w-16 h-16 text-white opacity-70" />
+                )}
+              </div>
+            )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
               <button
                 onClick={() => setSelectedContent(item)}
@@ -486,59 +492,6 @@ const MovieTVRecommendationSystem = () => {
                 <Play className="w-4 h-4" />
                 Ver detalhes
               </button>
-            </div>
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-400 to-blue-500 flex items-center justify-center">
-              {item.type === 'movie' ? (
-                <Film className="w-16 h-16 text-white opacity-70" />
-              ) : (
-                <Tv className="w-16 h-16 text-white opacity-70" />
-              )}
-            </div>
-          
-            {/* Badge de tipo */}
-            <div className={`absolute top-3 left-3 px-2 py-1 rounded text-xs font-semibold text-white ${
-              item.type === 'movie' ? 'bg-blue-600' : 'bg-purple-600'
-            }`}>
-              {item.type === 'movie' ? 'FILME' : 'SÉRIE'}
-            </div>
-            
-            {/* Botões de ação */}
-            <div className="absolute top-3 right-3 flex gap-2">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleWatchlist(item.id);
-                }}
-                className={`p-2 rounded-full transition-colors ${
-                  watchlist.includes(item.id)
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-white/80 text-gray-600 hover:bg-blue-500 hover:text-white'
-                }`}
-                aria-label={watchlist.includes(item.id) ? 'Remover da lista' : 'Adicionar à lista'}
-              >
-                <Bookmark className={`w-4 h-4 ${watchlist.includes(item.id) ? 'fill-current' : ''}`} />
-              </button>
-              
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleFavorite(item.id);
-                }}
-                className={`p-2 rounded-full transition-colors ${
-                  favorites.includes(item.id)
-                    ? 'bg-red-500 text-white'
-                    : 'bg-white/80 text-gray-600 hover:bg-red-500 hover:text-white'
-                }`}
-                aria-label={favorites.includes(item.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
-              >
-                <Heart className={`w-4 h-4 ${favorites.includes(item.id) ? 'fill-current' : ''}`} />
-              </button>
-            </div>
-            
-            {/* Avaliação */}
-            <div className="absolute bottom-3 left-3 bg-black/70 text-white px-2 py-1 rounded text-sm font-semibold flex items-center gap-1">
-              <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-              <span>{item.vote_average.toFixed(1)}</span>
             </div>
           </div>
         </div>
@@ -1047,7 +1000,11 @@ const MovieTVRecommendationSystem = () => {
             © {new Date().getFullYear()} Flembox. Todos os direitos reservados.
           </p>
         </div>
+        <p className="text-gray-600 text-sm mt-2 text-center w-full">
+            Desenvolvido por <a href="https://instagram.com/devmxs" className="hover:text-blue-700 font-semibold transition">DEVMXS</a>
+          </p>
       </footer>
+      
     </div>
   );
 };
