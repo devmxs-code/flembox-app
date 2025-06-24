@@ -21,7 +21,6 @@ const MovieTVRecommendationSystem = () => {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('discover');
   const [contentType, setContentType] = useState('movie');
-  const [showFilters, setShowFilters] = useState(false);
   const [sortBy, setSortBy] = useState('popularity');
   const [watchlist, setWatchlist] = useState([]);
   const [viewMode, setViewMode] = useState('grid');
@@ -656,7 +655,7 @@ const MovieTVRecommendationSystem = () => {
 
   // Renderização principal
   return (
-    <div className="min-h-[100dvh] flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+    <div className="min-h-[100dvh] flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors duration-300 relative">
       {/* Header */}
       <header className="sticky top-0 left-0 right-0 bg-white dark:bg-gray-800 shadow z-30 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-2 sm:px-4 py-2 sm:py-4 flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-4">
@@ -720,57 +719,48 @@ const MovieTVRecommendationSystem = () => {
 
       {/* Filtros */}
       <div className="max-w-7xl mx-auto px-2 sm:px-4 mt-2 sm:mt-4 flex flex-col sm:flex-row gap-2 sm:gap-4 items-center">
-        <button
-          className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-full text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-          onClick={() => setShowFilters(!showFilters)}
-        >
-          <Sliders className="w-4 h-4" />
-          Filtros
-          <ChevronDown className={`w-4 h-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
-        </button>
-        {showFilters && (
-          <div className="flex flex-col sm:flex-row gap-4 w-full">
-            <div className="relative flex-1 max-w-xs">
-              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <select
-                value={selectedGenre}
-                onChange={e => handleGenreChange(e.target.value)}
-                className="w-full pl-10 pr-8 py-2 border rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              >
-                <option value="">Todos os gêneros</option>
-                {genres.map(genre => (
-                  <option key={genre.id} value={genre.id}>{genre.name}</option>
-                ))}
-              </select>
-            </div>
-            <div className="relative flex-1 max-w-xs">
-              <select
-                value={sortBy}
-                onChange={e => setSortBy(e.target.value)}
-                className="w-full pl-4 pr-8 py-2 border rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              >
-                <option value="popularity">Mais populares</option>
-                <option value="rating">Melhor avaliados</option>
-                <option value="newest">Mais recentes</option>
-                <option value="oldest">Mais antigos</option>
-              </select>
-            </div>
-            <div className="relative flex-1 max-w-xs">
-              <select
-                value={viewMode}
-                onChange={e => setViewMode(e.target.value)}
-                className="w-full pl-4 pr-8 py-2 border rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              >
-                <option value="grid">Visualização em grade</option>
-                <option value="list">Visualização em lista</option>
-              </select>
-            </div>
+        {/* Filtros SEM botão de abrir/fechar */}
+        <div className="flex flex-col sm:flex-row gap-4 w-full">
+          <div className="relative flex-1 max-w-xs">
+            <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <select
+              value={selectedGenre}
+              onChange={e => handleGenreChange(e.target.value)}
+              className="w-full pl-10 pr-8 py-2 border rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            >
+              <option value="">Gêneros</option>
+              {genres.map(genre => (
+                <option key={genre.id} value={genre.id}>{genre.name}</option>
+              ))}
+            </select>
           </div>
-        )}
+          <div className="relative flex-1 max-w-xs">
+            <select
+              value={sortBy}
+              onChange={e => setSortBy(e.target.value)}
+              className="w-full pl-4 pr-8 py-2 border rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            >
+              <option value="popularity">Mais populares</option>
+              <option value="rating">Melhor avaliados</option>
+              <option value="newest">Mais recentes</option>
+              <option value="oldest">Mais antigos</option>
+            </select>
+          </div>
+          <div className="relative flex-1 max-w-xs">
+            <select
+              value={viewMode}
+              onChange={e => setViewMode(e.target.value)}
+              className="w-full pl-4 pr-8 py-2 border rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            >
+              <option value="grid">Visualização em grade</option>
+              <option value="list">Visualização em lista</option>
+            </select>
+          </div>
+        </div>
       </div>
 
       {/* Conteúdo principal */}
-      <main className="flex-1 max-w-7xl mx-auto px-4 py-8">
+      <main className="flex-1 max-w-7xl mx-auto w-full px-2 sm:px-4 py-6 sm:py-8">
         {error && (
           <div className="flex items-center gap-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 px-4 py-3 rounded mb-6">
             <AlertCircle className="w-5 h-5" />
@@ -788,7 +778,7 @@ const MovieTVRecommendationSystem = () => {
                 Nenhum conteúdo encontrado.
               </div>
             ) : viewMode === 'grid' ? (
-              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
+              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                 {getCurrentContent().map(item => (
                   <ContentCard key={item.id} item={item} />
                 ))}
@@ -824,14 +814,16 @@ const MovieTVRecommendationSystem = () => {
         </p>
       </footer>
 
-      {/* Botão de alternar tema */}
-      <button
-        onClick={() => setDarkMode(!darkMode)}
-        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 bg-blue-600 dark:bg-blue-700 text-white p-2 sm:p-3 rounded-full shadow-lg hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors duration-300 z-20"
-        aria-label={darkMode ? 'Alternar para tema claro' : 'Alternar para tema escuro'}
-      >
-        {darkMode ? <Sun className="w-5 h-5 sm:w-6 sm:h-6" /> : <Moon className="w-5 h-5 sm:w-6 sm:h-6" />}
-      </button>
+      {/* Botão de alternar tema - FLUTUANTE */}
+      <div className="fixed z-50 bottom-6 right-6 flex flex-col items-end pointer-events-none">
+        <button
+          onClick={() => setDarkMode(!darkMode)}
+          className="pointer-events-auto bg-blue-600 dark:bg-blue-700 text-white p-3 rounded-full shadow-xl hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors duration-300 focus:outline-none"
+          aria-label={darkMode ? 'Alternar para tema claro' : 'Alternar para tema escuro'}
+        >
+          {darkMode ? <Sun className="w-6 h-6" /> : <Moon className="w-6 h-6" />}
+        </button>
+      </div>
     </div>
   );
 };
