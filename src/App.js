@@ -270,7 +270,7 @@ const MovieTVRecommendationSystem = () => {
     return (
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 group border border-gray-100 dark:border-gray-800">
         <div className="relative">
-          <div className="w-full h-48 sm:h-64 flex items-center justify-center relative overflow-hidden">
+          <div className="w-full h-40 xs:h-48 sm:h-64 flex items-center justify-center relative overflow-hidden">
             {item.poster_path ? (
               <img
                 src={
@@ -361,7 +361,7 @@ const MovieTVRecommendationSystem = () => {
         className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-all duration-300 flex border border-gray-100 dark:border-gray-800"
         onClick={() => setSelectedContent(item)}
       >
-        <div className="w-20 h-28 sm:w-24 sm:h-32 flex-shrink-0 relative">
+        <div className="w-16 h-24 xs:w-20 xs:h-28 sm:w-24 sm:h-32 flex-shrink-0 relative">
           {item.poster_path ? (
             <img 
               src={
@@ -462,7 +462,7 @@ const MovieTVRecommendationSystem = () => {
 
     return (
       <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center p-1 sm:p-4 z-50">
-        <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-4xl max-h-[95vh] overflow-y-auto relative">
+        <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-2xl sm:max-w-4xl max-h-[95vh] overflow-y-auto relative">
           <button
             onClick={onClose}
             className="absolute top-4 right-4 bg-white/80 dark:bg-gray-700/80 p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors z-10"
@@ -658,7 +658,7 @@ const MovieTVRecommendationSystem = () => {
     <div className="min-h-[100dvh] flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors duration-300 relative">
       {/* Header */}
       <header className="sticky top-0 left-0 right-0 bg-white dark:bg-gray-800 shadow z-30 transition-colors duration-300">
-        <div className="max-w-7xl mx-auto px-2 sm:px-4 py-2 sm:py-4 flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-4">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 py-2 sm:py-4 flex flex-wrap items-center justify-between gap-2 sm:gap-4">
           <div className="flex items-center gap-2">
             <Film className="w-8 h-8 text-blue-600 dark:text-blue-400" />
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">FlemBox</h1>
@@ -696,11 +696,11 @@ const MovieTVRecommendationSystem = () => {
       </header>
 
       {/* Tabs */}
-      <nav className="max-w-7xl mx-auto px-2 sm:px-4 mt-4 sm:mt-6 flex gap-1 sm:gap-2 overflow-x-auto pb-2">
+      <nav className="max-w-7xl mx-auto px-2 sm:px-4 mt-2 sm:mt-6 flex gap-1 sm:gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700">
         {[
           { id: 'discover', label: 'Descobrir', icon: <Home className="w-4 h-4" /> },
           { id: 'favorites', label: 'Favoritos', icon: <Heart className="w-4 h-4" /> },
-          { id: 'watchlist', label: 'Assistir depois', icon: <Bookmark className="w-4 h-4" /> },
+          { id: 'watchlist', label: 'Salvar', icon: <Bookmark className="w-4 h-4" /> },
         ].map(tab => (
           <button
             key={tab.id}
@@ -718,10 +718,10 @@ const MovieTVRecommendationSystem = () => {
       </nav>
 
       {/* Filtros */}
-      <div className="max-w-7xl mx-auto px-2 sm:px-4 mt-2 sm:mt-4 flex flex-col sm:flex-row gap-2 sm:gap-4 items-center">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 mt-2 sm:mt-4 flex flex-col sm:flex-row gap-2 sm:gap-4 items-stretch sm:items-center">
         {/* Filtros SEM botão de abrir/fechar */}
-        <div className="flex flex-col sm:flex-row gap-4 w-full">
-          <div className="relative flex-1 max-w-xs">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 w-full">
+          <div className="relative flex-1 min-w-0 max-w-full">
             <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <select
               value={selectedGenre}
@@ -734,7 +734,7 @@ const MovieTVRecommendationSystem = () => {
               ))}
             </select>
           </div>
-          <div className="relative flex-1 max-w-xs">
+          <div className="relative flex-1 min-w-0 max-w-full">
             <select
               value={sortBy}
               onChange={e => setSortBy(e.target.value)}
@@ -746,7 +746,7 @@ const MovieTVRecommendationSystem = () => {
               <option value="oldest">Mais antigos</option>
             </select>
           </div>
-          <div className="relative flex-1 max-w-xs">
+          <div className="relative flex-1 min-w-0 max-w-full">
             <select
               value={viewMode}
               onChange={e => setViewMode(e.target.value)}
@@ -760,7 +760,7 @@ const MovieTVRecommendationSystem = () => {
       </div>
 
       {/* Conteúdo principal */}
-      <main className="flex-1 max-w-7xl mx-auto w-full px-2 sm:px-4 py-6 sm:py-8">
+      <main className="flex-1 max-w-7xl mx-auto w-full px-1 sm:px-4 py-4 sm:py-8">
         {error && (
           <div className="flex items-center gap-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 px-4 py-3 rounded mb-6">
             <AlertCircle className="w-5 h-5" />
@@ -778,13 +778,13 @@ const MovieTVRecommendationSystem = () => {
                 Nenhum conteúdo encontrado.
               </div>
             ) : viewMode === 'grid' ? (
-              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
                 {getCurrentContent().map(item => (
                   <ContentCard key={item.id} item={item} />
                 ))}
               </div>
             ) : (
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-3 sm:gap-4">
                 {getCurrentContent().map(item => (
                   <ContentListItem key={item.id} item={item} />
                 ))}
@@ -803,7 +803,7 @@ const MovieTVRecommendationSystem = () => {
       )}
 
       {/* Footer */}
-      <footer className="bg-gray-900 dark:bg-gray-950 text-white py-4 sm:py-8 transition-colors duration-300 border-t border-gray-200 dark:border-gray-800">
+      <footer className="bg-gray-900 dark:bg-gray-950 text-white py-3 sm:py-8 transition-colors duration-300 border-t border-gray-200 dark:border-gray-800">
         <div className="max-w-7xl mx-auto px-2 sm:px-4 text-center">
           <p className="text-gray-400 text-sm">
             © {new Date().getFullYear()} FlemBox. Todos os direitos reservados.
@@ -815,13 +815,13 @@ const MovieTVRecommendationSystem = () => {
       </footer>
 
       {/* Botão de alternar tema - FLUTUANTE */}
-      <div className="fixed z-50 bottom-6 right-6 flex flex-col items-end pointer-events-none">
+      <div className="fixed z-50 bottom-4 right-4 sm:bottom-6 sm:right-6 flex flex-col items-end pointer-events-none">
         <button
           onClick={() => setDarkMode(!darkMode)}
-          className="pointer-events-auto bg-blue-600 dark:bg-blue-700 text-white p-3 rounded-full shadow-xl hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors duration-300 focus:outline-none"
+          className="pointer-events-auto bg-blue-600 dark:bg-blue-700 text-white p-2 sm:p-3 rounded-full shadow-xl hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors duration-300 focus:outline-none"
           aria-label={darkMode ? 'Alternar para tema claro' : 'Alternar para tema escuro'}
         >
-          {darkMode ? <Sun className="w-6 h-6" /> : <Moon className="w-6 h-6" />}
+          {darkMode ? <Sun className="w-5 h-5 sm:w-6 sm:h-6" /> : <Moon className="w-5 h-5 sm:w-6 sm:h-6" />}
         </button>
       </div>
     </div>
