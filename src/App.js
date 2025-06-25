@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   Search, Star, Heart, Filter, X, Play, Tv, Film, Calendar, Clock, 
   Home, Bookmark, Sliders, ChevronDown, Loader, AlertCircle,
-  Moon, Sun
+  Moon, Sun, ChevronLeft, ChevronRight
 } from 'lucide-react';
 
 const API_KEY = '4e44d9029b1270a757cddc766a1bcb63';
@@ -25,6 +25,10 @@ const MovieTVRecommendationSystem = () => {
   const [watchlist, setWatchlist] = useState([]);
   const [viewMode, setViewMode] = useState('grid');
   const [darkMode, setDarkMode] = useState(false);
+  const [searchFocused, setSearchFocused] = useState(false);
+  const [searchSuggestions, setSearchSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchRef = useRef(null);
 
   // Dark mode
   useEffect(() => {
@@ -35,7 +39,7 @@ const MovieTVRecommendationSystem = () => {
     }
   }, [darkMode]);
 
-  // Carregar ratings do localStorage ao iniciar
+  // Carregar dados do localStorage ao iniciar
   useEffect(() => {
     const savedRatings = localStorage.getItem('flemboxRatings');
     if (savedRatings) setRatings(JSON.parse(savedRatings));
@@ -43,18 +47,17 @@ const MovieTVRecommendationSystem = () => {
     if (savedFavorites) setFavorites(JSON.parse(savedFavorites));
     const savedWatchlist = localStorage.getItem('flemboxWatchlist');
     if (savedWatchlist) setWatchlist(JSON.parse(savedWatchlist));
+    const savedDarkMode = localStorage.getItem('flemboxDarkMode');
+    if (savedDarkMode) setDarkMode(JSON.parse(savedDarkMode));
   }, []);
 
-  // Salvar ratings, favoritos e watchlist no localStorage sempre que mudar
+  // Salvar configurações no localStorage
   useEffect(() => {
     localStorage.setItem('flemboxRatings', JSON.stringify(ratings));
-  }, [ratings]);
-  useEffect(() => {
     localStorage.setItem('flemboxFavorites', JSON.stringify(favorites));
-  }, [favorites]);
-  useEffect(() => {
     localStorage.setItem('flemboxWatchlist', JSON.stringify(watchlist));
-  }, [watchlist]);
+    localStorage.setItem('flemboxDarkMode', JSON.stringify(darkMode));
+  }, [ratings, favorites, watchlist, darkMode]);
 
   // Carregar gêneros da API
   const loadGenres = useCallback(async () => {
@@ -78,7 +81,6 @@ const MovieTVRecommendationSystem = () => {
           : `${BASE_URL}/tv/popular?api_key=${API_KEY}&language=pt-BR&page=1`;
       const res = await fetch(endpoint);
       const data = await res.json();
-      // Adiciona o campo type para diferenciar no front
       const withType = (data.results || []).map(item => ({
         ...item,
         type: contentType
@@ -120,6 +122,25 @@ const MovieTVRecommendationSystem = () => {
     }
   }, [contentType, loadContent]);
 
+  // Buscar sugestões de pesquisa
+  const fetchSearchSuggestions = useCallback(async (query) => {
+    if (!query) {
+      setSearchSuggestions([]);
+      return;
+    }
+    try {
+      const endpoint =
+        contentType === 'movie'
+          ? `${BASE_URL}/search/movie?api_key=${API_KEY}&language=pt-BR&query=${encodeURIComponent(query)}&page=1`
+          : `${BASE_URL}/search/tv?api_key=${API_KEY}&language=pt-BR&query=${encodeURIComponent(query)}&page=1`;
+      const res = await fetch(endpoint);
+      const data = await res.json();
+      setSearchSuggestions(data.results?.slice(0, 5) || []);
+    } catch {
+      setSearchSuggestions([]);
+    }
+  }, [contentType]);
+
   // Filtrar por gênero
   const filterByGenre = useCallback(async (genreId) => {
     if (!genreId) {
@@ -153,6 +174,18 @@ const MovieTVRecommendationSystem = () => {
     loadGenres();
     loadContent();
   }, [contentType, loadGenres, loadContent]);
+
+  // Efeito para buscar sugestões quando o termo de pesquisa muda
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchTerm) {
+        fetchSearchSuggestions(searchTerm);
+      } else {
+        setSearchSuggestions([]);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm, fetchSearchSuggestions]);
 
   // Gerenciar favoritos
   const toggleFavorite = useCallback((itemId) => {
@@ -202,9 +235,17 @@ const MovieTVRecommendationSystem = () => {
 
   // Handlers
   const handleSearch = (e) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' || e.type === 'click') {
       searchContent(searchTerm);
+      setShowSuggestions(false);
+      searchRef.current?.blur();
     }
+  };
+
+  const handleSuggestionClick = (suggestion) => {
+    setSearchTerm(suggestion.title || suggestion.name);
+    setContent([{ ...suggestion, type: contentType }]);
+    setShowSuggestions(false);
   };
 
   const handleGenreChange = (genreId) => {
@@ -216,6 +257,7 @@ const MovieTVRecommendationSystem = () => {
     setContentType(type);
     setSearchTerm('');
     setSelectedGenre('');
+    setSearchSuggestions([]);
   };
 
   // Componente de avaliação por estrelas
@@ -268,7 +310,7 @@ const MovieTVRecommendationSystem = () => {
     };
 
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 group border border-gray-100 dark:border-gray-800">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 group border border-gray-100 dark:border-gray-700">
         <div className="relative">
           <div className="w-full h-40 xs:h-48 sm:h-64 flex items-center justify-center relative overflow-hidden">
             {item.poster_path ? (
@@ -303,6 +345,34 @@ const MovieTVRecommendationSystem = () => {
                 Ver detalhes
               </button>
             </div>
+          </div>
+          <div className="absolute top-2 right-2 flex gap-1">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleWatchlist(item.id);
+              }}
+              className={`p-1.5 rounded-full backdrop-blur-sm transition-all ${
+                watchlist.includes(item.id) 
+                  ? 'bg-blue-500/90 text-white' 
+                  : 'bg-gray-800/60 text-gray-200 hover:bg-blue-500/90 hover:text-white'
+              }`}
+            >
+              <Bookmark className={`w-4 h-4 ${watchlist.includes(item.id) ? 'fill-current' : ''}`} />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleFavorite(item.id);
+              }}
+              className={`p-1.5 rounded-full backdrop-blur-sm transition-all ${
+                favorites.includes(item.id) 
+                  ? 'bg-red-500/90 text-white' 
+                  : 'bg-gray-800/60 text-gray-200 hover:bg-red-500/90 hover:text-white'
+              }`}
+            >
+              <Heart className={`w-4 h-4 ${favorites.includes(item.id) ? 'fill-current' : ''}`} />
+            </button>
           </div>
         </div>
         <div className="p-4">
@@ -358,7 +428,7 @@ const MovieTVRecommendationSystem = () => {
 
     return (
       <div 
-        className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-all duration-300 flex border border-gray-100 dark:border-gray-800"
+        className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-all duration-300 flex border border-gray-100 dark:border-gray-700 cursor-pointer"
         onClick={() => setSelectedContent(item)}
       >
         <div className="w-16 h-24 xs:w-20 xs:h-28 sm:w-24 sm:h-32 flex-shrink-0 relative">
@@ -657,140 +727,352 @@ const MovieTVRecommendationSystem = () => {
   return (
     <div className="min-h-[100dvh] flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors duration-300 relative">
       {/* Header */}
-      <header className="sticky top-0 left-0 right-0 bg-white dark:bg-gray-800 shadow z-30 transition-colors duration-300">
+      <header className="sticky top-0 left-0 right-0 bg-white dark:bg-gray-800 shadow-md z-30 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-2 sm:px-4 py-2 sm:py-4 flex flex-wrap items-center justify-between gap-2 sm:gap-4">
           <div className="flex items-center gap-2">
             <Film className="w-8 h-8 text-blue-600 dark:text-blue-400" />
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">FlemBox</h1>
           </div>
-          <div className="flex-1 w-full max-w-xl">
-            <div className="relative">
+          
+          {/* Barra de pesquisa aprimorada */}
+          <div className="flex-1 w-full max-w-xl relative">
+            <div className={`relative transition-all duration-200 ${searchFocused ? 'ring-2 ring-blue-500 rounded-xl' : 'rounded-full'}`}>
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
+                ref={searchRef}
                 type="text"
                 placeholder={`Buscar ${contentType === 'movie' ? 'filmes...' : 'séries...'}`}
                 value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
+                onChange={e => {
+                  setSearchTerm(e.target.value);
+                  setShowSuggestions(true);
+                }}
                 onKeyPress={handleSearch}
-                className="w-full pl-10 pr-4 py-2 border rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => {
+                  setTimeout(() => setShowSuggestions(false), 200);
+                  setSearchFocused(false);
+                }}
+                className="w-full pl-10 pr-10 py-2 border rounded-full focus:outline-none focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
               />
+              {searchTerm && (
+                <button
+                  onClick={() => {
+                    setSearchTerm('');
+                    setSearchSuggestions([]);
+                    loadContent();
+                  }}
+                  className="absolute right-10 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              )}
+              <button
+                onClick={handleSearch}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-blue-600 text-white p-1 rounded-full hover:bg-blue-700 transition-colors"
+              >
+                <Search className="w-4 h-4" />
+              </button>
             </div>
+            
+            {/* Sugestões de pesquisa */}
+            {showSuggestions && searchSuggestions.length > 0 && (
+              <div className="absolute z-40 w-full mt-1 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 max-h-60 overflow-y-auto">
+                {searchSuggestions.map(suggestion => (
+                  <div
+                    key={suggestion.id}
+                    className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer flex items-center gap-3"
+                    onClick={() => handleSuggestionClick(suggestion)}
+                    onMouseDown={(e) => e.preventDefault()} // Previne o blur do input
+                  >
+                    <div className="w-10 h-14 flex-shrink-0 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden">
+                      {suggestion.poster_path ? (
+                        <img
+                          src={`${IMAGE_BASE_URL}${suggestion.poster_path}`}
+                          alt={suggestion.title || suggestion.name}
+                                                    className="w-full h-full object-cover"
+                          onError={e => {
+                            e.target.onerror = null;
+                            e.target.src = '/placeholder1.jpg';
+                          }}
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-blue-300 to-blue-700 flex items-center justify-center">
+                          {contentType === 'movie' ? (
+                            <Film className="w-5 h-5 text-white" />
+                          ) : (
+                            <Tv className="w-5 h-5 text-white" />
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate dark:text-white">
+                        {suggestion.title || suggestion.name}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                        {suggestion.release_date 
+                          ? new Date(suggestion.release_date).getFullYear()
+                          : suggestion.first_air_date
+                            ? new Date(suggestion.first_air_date).getFullYear()
+                            : 'N/A'}
+                        {suggestion.vote_average && ` • ⭐ ${suggestion.vote_average.toFixed(1)}`}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-          <div className="flex items-center gap-2">
+
+          {/* Botão de tema */}
+          <button
+            onClick={() => setDarkMode(!darkMode)}
+            className="p-2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+          >
+            {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+          </button>
+        </div>
+
+        {/* Abas de navegação */}
+        <div className="max-w-7xl mx-auto px-2 sm:px-4">
+          <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-hide">
             <button
-              onClick={() => handleContentTypeChange('movie')}
-              className={`p-2 rounded-full transition-colors ${contentType === 'movie' ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-blue-600 hover:text-white'}`}
-              aria-label="Filmes"
+              onClick={() => setActiveTab('discover')}
+              className={`px-4 py-2 rounded-t-lg font-medium text-sm whitespace-nowrap transition-colors ${
+                activeTab === 'discover'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+              }`}
             >
-              <Film className="w-5 h-5" />
+              <div className="flex items-center gap-2">
+                <Home className="w-4 h-4" />
+                <span>Descobrir</span>
+              </div>
             </button>
             <button
-              onClick={() => handleContentTypeChange('tv')}
-              className={`p-2 rounded-full transition-colors ${contentType === 'tv' ? 'bg-blue-700 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-blue-700 hover:text-white'}`}
-              aria-label="Séries"
+              onClick={() => setActiveTab('favorites')}
+              className={`px-4 py-2 rounded-t-lg font-medium text-sm whitespace-nowrap transition-colors ${
+                activeTab === 'favorites'
+                  ? 'bg-red-500 text-white'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+              }`}
             >
-              <Tv className="w-5 h-5" />
+              <div className="flex items-center gap-2">
+                <Heart className="w-4 h-4" />
+                <span>Favoritos ({favorites.length})</span>
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('watchlist')}
+              className={`px-4 py-2 rounded-t-lg font-medium text-sm whitespace-nowrap transition-colors ${
+                activeTab === 'watchlist'
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <Bookmark className="w-4 h-4" />
+                <span>Assistir depois ({watchlist.length})</span>
+              </div>
             </button>
           </div>
         </div>
       </header>
 
-      {/* Tabs */}
-      <nav className="max-w-7xl mx-auto px-2 sm:px-4 mt-2 sm:mt-6 flex gap-1 sm:gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700">
-        {[
-          { id: 'discover', label: 'Descobrir', icon: <Home className="w-4 h-4" /> },
-          { id: 'favorites', label: 'Favoritos', icon: <Heart className="w-4 h-4" /> },
-          { id: 'watchlist', label: 'Salvar', icon: <Bookmark className="w-4 h-4" /> },
-        ].map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium transition-colors whitespace-nowrap ${
-              activeTab === tab.id 
-                ? 'bg-blue-600 text-white' 
-                : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-            }`}
-          >
-            {tab.icon}
-            {tab.label}
-          </button>
-        ))}
-      </nav>
+      {/* Filtros e controles */}
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 py-4 w-full">
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+          {/* Toggle Filmes/Séries */}
+          <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+            <button
+              onClick={() => handleContentTypeChange('movie')}
+              className={`px-3 py-1 rounded-md text-sm font-medium transition-colors flex items-center gap-1 ${
+                contentType === 'movie'
+                  ? 'bg-white dark:bg-gray-700 shadow text-blue-600 dark:text-blue-400'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+              }`}
+            >
+              <Film className="w-4 h-4" />
+              <span>Filmes</span>
+            </button>
+            <button
+              onClick={() => handleContentTypeChange('tv')}
+              className={`px-3 py-1 rounded-md text-sm font-medium transition-colors flex items-center gap-1 ${
+                contentType === 'tv'
+                  ? 'bg-white dark:bg-gray-700 shadow text-blue-600 dark:text-blue-400'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+              }`}
+            >
+              <Tv className="w-4 h-4" />
+              <span>Séries</span>
+            </button>
+          </div>
 
-      {/* Filtros */}
-      <div className="max-w-7xl mx-auto px-2 sm:px-4 mt-2 sm:mt-4 flex flex-col sm:flex-row gap-2 sm:gap-4 items-stretch sm:items-center">
-        {/* Filtros SEM botão de abrir/fechar */}
-        <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 w-full">
-          <div className="relative flex-1 min-w-0 max-w-full">
-            <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <select
-              value={selectedGenre}
-              onChange={e => handleGenreChange(e.target.value)}
-              className="w-full pl-10 pr-8 py-2 border rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-            >
-              <option value="">Gêneros</option>
-              {genres.map(genre => (
-                <option key={genre.id} value={genre.id}>{genre.name}</option>
-              ))}
-            </select>
-          </div>
-          <div className="relative flex-1 min-w-0 max-w-full">
-            <select
-              value={sortBy}
-              onChange={e => setSortBy(e.target.value)}
-              className="w-full pl-4 pr-8 py-2 border rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-            >
-              <option value="popularity">Mais populares</option>
-              <option value="rating">Melhor avaliados</option>
-              <option value="newest">Mais recentes</option>
-              <option value="oldest">Mais antigos</option>
-            </select>
-          </div>
-          <div className="relative flex-1 min-w-0 max-w-full">
-            <select
-              value={viewMode}
-              onChange={e => setViewMode(e.target.value)}
-              className="w-full pl-4 pr-8 py-2 border rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-            >
-              <option value="grid">Visualização em grade</option>
-              <option value="list">Visualização em lista</option>
-            </select>
+          {/* Filtros */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Filtro por gênero */}
+            <div className="relative group">
+              <button className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
+                <Filter className="w-4 h-4" />
+                <span>{selectedGenre ? genres.find(g => g.id === selectedGenre)?.name || 'Gênero' : 'Gênero'}</span>
+                <ChevronDown className="w-4 h-4" />
+              </button>
+              <div className="absolute z-10 right-0 mt-2 w-56 origin-top-right bg-white dark:bg-gray-800 rounded-lg shadow-lg ring-1 ring-black/5 dark:ring-white/10 py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform scale-95 group-hover:scale-100">
+                <button
+                  onClick={() => handleGenreChange('')}
+                  className={`w-full text-left px-4 py-2 text-sm ${
+                    !selectedGenre
+                      ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  Todos os gêneros
+                </button>
+                {genres.map(genre => (
+                  <button
+                    key={genre.id}
+                    onClick={() => handleGenreChange(genre.id)}
+                    className={`w-full text-left px-4 py-2 text-sm ${
+                      selectedGenre === genre.id
+                        ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400'
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    {genre.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Ordenação */}
+            <div className="relative group">
+              <button className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
+                <Sliders className="w-4 h-4" />
+                <span>
+                  {sortBy === 'popularity' && 'Popularidade'}
+                  {sortBy === 'rating' && 'Avaliação'}
+                  {sortBy === 'newest' && 'Mais recentes'}
+                  {sortBy === 'oldest' && 'Mais antigos'}
+                </span>
+                <ChevronDown className="w-4 h-4" />
+              </button>
+              <div className="absolute z-10 right-0 mt-2 w-48 origin-top-right bg-white dark:bg-gray-800 rounded-lg shadow-lg ring-1 ring-black/5 dark:ring-white/10 py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform scale-95 group-hover:scale-100">
+                <button
+                  onClick={() => setSortBy('popularity')}
+                  className={`w-full text-left px-4 py-2 text-sm ${
+                    sortBy === 'popularity'
+                      ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  Popularidade
+                </button>
+                <button
+                  onClick={() => setSortBy('rating')}
+                  className={`w-full text-left px-4 py-2 text-sm ${
+                    sortBy === 'rating'
+                      ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  Avaliação
+                </button>
+                <button
+                  onClick={() => setSortBy('newest')}
+                  className={`w-full text-left px-4 py-2 text-sm ${
+                    sortBy === 'newest'
+                      ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  Mais recentes
+                </button>
+                <button
+                  onClick={() => setSortBy('oldest')}
+                  className={`w-full text-left px-4 py-2 text-sm ${
+                    sortBy === 'oldest'
+                      ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  Mais antigos
+                </button>
+              </div>
+            </div>
+
+            {/* Visualização (grid/lista) */}
+            <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-1.5 rounded-md transition-colors ${
+                  viewMode === 'grid'
+                    ? 'bg-white dark:bg-gray-700 shadow text-blue-600 dark:text-blue-400'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                }`}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                </svg>
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-1.5 rounded-md transition-colors ${
+                  viewMode === 'list'
+                    ? 'bg-white dark:bg-gray-700 shadow text-blue-600 dark:text-blue-400'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                }`}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Conteúdo principal */}
-      <main className="flex-1 max-w-7xl mx-auto w-full px-1 sm:px-4 py-4 sm:py-8">
-        {error && (
-          <div className="flex items-center gap-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 px-4 py-3 rounded mb-6">
-            <AlertCircle className="w-5 h-5" />
-            <span>{error}</span>
-          </div>
-        )}
+      <main className="flex-1 max-w-7xl mx-auto px-2 sm:px-4 py-2 w-full">
         {loading ? (
-          <div className="flex justify-center items-center py-20">
-            <Loader className="w-12 h-12 text-blue-600 animate-spin" />
+          <div className="flex flex-col items-center justify-center py-20">
+            <Loader className="w-12 h-12 animate-spin text-blue-500" />
+            <p className="mt-4 text-gray-600 dark:text-gray-400">Carregando...</p>
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <AlertCircle className="w-12 h-12 text-red-500" />
+            <p className="mt-4 text-gray-600 dark:text-gray-400">{error}</p>
+            <button
+              onClick={loadContent}
+              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Tentar novamente
+            </button>
+          </div>
+        ) : getCurrentContent().length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <Film className="w-12 h-12 text-gray-400" />
+            <p className="mt-4 text-gray-600 dark:text-gray-400">
+              {activeTab === 'favorites'
+                ? 'Nenhum favorito adicionado ainda.'
+                : activeTab === 'watchlist'
+                  ? 'Sua lista para assistir está vazia.'
+                  : 'Nenhum resultado encontrado.'}
+            </p>
+          </div>
+        ) : viewMode === 'grid' ? (
+          <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
+            {getCurrentContent().map(item => (
+              <ContentCard key={`${item.id}-${item.type}`} item={item} />
+            ))}
           </div>
         ) : (
-          <>
-            {getCurrentContent().length === 0 ? (
-              <div className="text-center py-20 text-gray-500 dark:text-gray-400">
-                Nenhum conteúdo encontrado.
-              </div>
-            ) : viewMode === 'grid' ? (
-              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
-                {getCurrentContent().map(item => (
-                  <ContentCard key={item.id} item={item} />
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col gap-3 sm:gap-4">
-                {getCurrentContent().map(item => (
-                  <ContentListItem key={item.id} item={item} />
-                ))}
-              </div>
-            )}
-          </>
+          <div className="space-y-4">
+            {getCurrentContent().map(item => (
+              <ContentListItem key={`${item.id}-${item.type}`} item={item} />
+            ))}
+          </div>
         )}
       </main>
 
@@ -801,29 +1083,6 @@ const MovieTVRecommendationSystem = () => {
           onClose={() => setSelectedContent(null)}
         />
       )}
-
-      {/* Footer */}
-      <footer className="bg-gray-900 dark:bg-gray-950 text-white py-3 sm:py-8 transition-colors duration-300 border-t border-gray-200 dark:border-gray-800">
-        <div className="max-w-7xl mx-auto px-2 sm:px-4 text-center">
-          <p className="text-gray-400 text-sm">
-            © {new Date().getFullYear()} FlemBox. Todos os direitos reservados.
-          </p>
-        </div>
-        <p className="text-gray-500 dark:text-gray-600 text-xs sm:text-sm mt-2 text-center w-full transition-colors duration-300">
-          Desenvolvido por <a href="https://instagram.com/devmxs" className="hover:text-blue-400 dark:hover:text-blue-500 font-semibold transition">DEVMXS</a>
-        </p>
-      </footer>
-
-      {/* Botão de alternar tema - FLUTUANTE */}
-      <div className="fixed z-50 bottom-4 right-4 sm:bottom-6 sm:right-6 flex flex-col items-end pointer-events-none">
-        <button
-          onClick={() => setDarkMode(!darkMode)}
-          className="pointer-events-auto bg-blue-600 dark:bg-blue-700 text-white p-2 sm:p-3 rounded-full shadow-xl hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors duration-300 focus:outline-none"
-          aria-label={darkMode ? 'Alternar para tema claro' : 'Alternar para tema escuro'}
-        >
-          {darkMode ? <Sun className="w-5 h-5 sm:w-6 sm:h-6" /> : <Moon className="w-5 h-5 sm:w-6 sm:h-6" />}
-        </button>
-      </div>
     </div>
   );
 };
